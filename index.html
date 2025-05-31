@@ -1,165 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Track Your Order | RAW CORE</title>
+  <meta charset="UTF-8">
+  <title>RAW CORE - Track Order</title>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f9f9f9;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f8f9fa;
       margin: 0;
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
+      padding: 20px;
     }
-    h1 {
-      color: #222;
-      margin-bottom: 1rem;
-    }
-    .box, .admin-panel, .login-panel {
-      background: #fff;
-      padding: 1.5rem;
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
       border-radius: 12px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.05);
-      max-width: 450px;
-      width: 100%;
-      margin-top: 1rem;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    label {
-      font-weight: 600;
-    }
-    input {
-      width: 100%;
-      padding: 0.8rem;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      margin: 0.5rem 0 1rem;
-      font-size: 1rem;
-    }
-    button {
-      padding: 0.7rem 1.2rem;
-      background: #111;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-      font-size: 1rem;
-    }
-    button:hover {
-      background: #333;
-    }
-    .admin-toggle {
-      margin-top: 2rem;
+    h2 {
       text-align: center;
+      margin-bottom: 30px;
     }
-    .hidden {
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e9f7ef;
+      border: 1px solid #c3e6cb;
+      border-radius: 8px;
       display: none;
     }
-    .result {
-      margin-top: 1rem;
-      font-weight: 500;
-      color: #555;
-    }
-    .result a {
-      color: #007bff;
-      text-decoration: none;
+    .admin-toggle {
+      text-align: center;
+      margin-top: 20px;
+      cursor: pointer;
+      color: blue;
     }
   </style>
 </head>
 <body>
-  <h1>Track Your Order</h1>
-  <div class="box">
-    <label for="trackOrderId">Enter Order ID:</label>
-    <input type="text" id="trackOrderId" placeholder="e.g. RAW1234" />
-    <button onclick="trackOrder()">Track</button>
-    <div class="result" id="trackResult"></div>
+
+<div class="container">
+  <h2>🔍 Track Your Order</h2>
+  <input id="orderIdInput" placeholder="Enter your Order ID" />
+  <button onclick="trackOrder()">Track Now</button>
+  <div id="result"></div>
+
+  <div class="admin-toggle" onclick="toggleAdmin()">🔐 Admin Area</div>
+
+  <div id="adminPanel" style="display:none; margin-top:40px;">
+    <h2>Admin Panel</h2>
+    <input id="adminEmail" placeholder="Admin Email" />
+    <input id="adminPass" type="password" placeholder="Password" />
+    <input id="newOrderId" placeholder="New Order ID" />
+    <input id="newOrderLink" placeholder="Tracking Link (Shiprocket)" />
+    <button onclick="addOrder()">➕ Add Order</button>
+    <div id="adminMsg"></div>
   </div>
+</div>
 
-  <div class="admin-toggle">
-    <button onclick="showLogin()">Admin Area</button>
-  </div>
+<script>
+const SUPABASE_URL = 'https://zcfxolhaembsxcmncgaf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjZnhvbGhhZW1ic3hjbW5jZ2FmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg2NjcyNTEsImV4cCI6MjA2NDI0MzI1MX0.Ku0umzWy6wG04HAybCaaFBBi_uZFqEOqBjpCr9HDNlM';
 
-  <div class="login-panel hidden" id="loginPanel">
-    <h2>Admin Login</h2>
-    <label>Email:</label>
-    <input type="email" id="adminEmail" placeholder="admin@example.com" />
-    <label>Password:</label>
-    <input type="password" id="adminPassword" placeholder="Password" />
-    <button onclick="checkLogin()">Login</button>
-    <div class="result" id="loginResult"></div>
-  </div>
+async function trackOrder() {
+  const orderId = document.getElementById('orderIdInput').value.trim();
+  if (!orderId) return alert('Please enter Order ID.');
 
-  <div class="admin-panel hidden" id="adminPanel">
-    <h2>Add New Order</h2>
-    <label for="orderId">Order ID:</label>
-    <input type="text" id="orderId" placeholder="e.g. RAW1234" />
-    <label for="trackingUrl">Tracking URL:</label>
-    <input type="text" id="trackingUrl" placeholder="Paste Shiprocket URL" />
-    <button onclick="addOrder()">Add Order</button>
-    <div class="result" id="adminResult"></div>
-  </div>
-
-  <script>
-    // Load orders from localStorage or initialize empty object
-    let orders = JSON.parse(localStorage.getItem('orders')) || {};
-
-    function saveOrders() {
-      localStorage.setItem('orders', JSON.stringify(orders));
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?order_id=eq.${orderId}`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json'
     }
+  });
 
-    function trackOrder() {
-      const id = document.getElementById('trackOrderId').value.trim().toUpperCase();
-      const result = document.getElementById('trackResult');
-      if (!id) {
-        result.textContent = 'Please enter an Order ID.';
-        return;
-      }
-      if (orders[id]) {
-        result.innerHTML = `Tracking: <a href="${orders[id]}" target="_blank" rel="noopener noreferrer">Click Here</a>`;
-      } else {
-        result.textContent = 'Order ID not found.';
-      }
-    }
+  const data = await res.json();
+  const result = document.getElementById('result');
+  if (data.length) {
+    result.innerHTML = `✅ Order Found: <br><a href="${data[0].tracking_url}" target="_blank">${data[0].tracking_url}</a>`;
+    result.style.display = 'block';
+  } else {
+    result.innerHTML = '❌ Order not found. Please check your ID.';
+    result.style.display = 'block';
+  }
+}
 
-    function showLogin() {
-      document.getElementById('loginPanel').classList.remove('hidden');
-    }
+function toggleAdmin() {
+  const panel = document.getElementById('adminPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
 
-    function checkLogin() {
-      const email = document.getElementById('adminEmail').value.trim();
-      const pass = document.getElementById('adminPassword').value.trim();
-      const result = document.getElementById('loginResult');
+async function addOrder() {
+  const email = document.getElementById('adminEmail').value.trim();
+  const pass = document.getElementById('adminPass').value.trim();
+  const orderId = document.getElementById('newOrderId').value.trim();
+  const link = document.getElementById('newOrderLink').value.trim();
+  const msg = document.getElementById('adminMsg');
 
-      if (email === 'debnathguddu2004@gmail.com' && pass === 'Maa@2004@08') {
-        result.textContent = 'Login successful';
-        document.getElementById('loginPanel').classList.add('hidden');
-        document.getElementById('adminPanel').classList.remove('hidden');
-      } else {
-        result.textContent = 'Incorrect credentials';
-      }
-    }
+  if (email !== 'debnathguddu2004@gmail.com' || pass !== 'Maa@2004@08') {
+    msg.innerHTML = '❌ Invalid admin credentials';
+    return;
+  }
 
-    function addOrder() {
-      const id = document.getElementById('orderId').value.trim().toUpperCase();
-      const link = document.getElementById('trackingUrl').value.trim();
-      const result = document.getElementById('adminResult');
+  if (!orderId || !link) {
+    msg.innerHTML = '⚠️ Please enter all fields.';
+    return;
+  }
 
-      if (!id || !link) {
-        result.textContent = 'Please fill all fields.';
-        return;
-      }
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({ order_id: orderId, tracking_url: link })
+  });
 
-      orders[id] = link;
-      saveOrders();
+  if (res.status === 201 || res.status === 204) {
+    msg.innerHTML = '✅ Order added successfully!';
+  } else {
+    msg.innerHTML = '❌ Failed to add. Maybe duplicate Order ID?';
+  }
+}
+</script>
 
-      result.textContent = `Order ${id} added successfully.`;
-      document.getElementById('orderId').value = '';
-      document.getElementById('trackingUrl').value = '';
-    }
-  </script>
 </body>
 </html>
