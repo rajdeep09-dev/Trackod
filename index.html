@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Track Your Order | RAW CORE</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    h1 {
+      color: #222;
+      margin-bottom: 1rem;
+    }
+    .box, .admin-panel, .login-panel {
+      background: #fff;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.05);
+      max-width: 450px;
+      width: 100%;
+      margin-top: 1rem;
+    }
+    label {
+      font-weight: 600;
+    }
+    input {
+      width: 100%;
+      padding: 0.8rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin: 0.5rem 0 1rem;
+      font-size: 1rem;
+    }
+    button {
+      padding: 0.7rem 1.2rem;
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      font-size: 1rem;
+    }
+    button:hover {
+      background: #333;
+    }
+    .admin-toggle {
+      margin-top: 2rem;
+      text-align: center;
+    }
+    .hidden {
+      display: none;
+    }
+    .result {
+      margin-top: 1rem;
+      font-weight: 500;
+      color: #555;
+    }
+    .result a {
+      color: #007bff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Track Your Order</h1>
+  <div class="box">
+    <label for="trackOrderId">Enter Order ID:</label>
+    <input type="text" id="trackOrderId" placeholder="e.g. RAW1234" />
+    <button onclick="trackOrder()">Track</button>
+    <div class="result" id="trackResult"></div>
+  </div>
+
+  <div class="admin-toggle">
+    <button onclick="showLogin()">Admin Area</button>
+  </div>
+
+  <div class="login-panel hidden" id="loginPanel">
+    <h2>Admin Login</h2>
+    <label>Email:</label>
+    <input type="email" id="adminEmail" placeholder="admin@example.com" />
+    <label>Password:</label>
+    <input type="password" id="adminPassword" placeholder="Password" />
+    <button onclick="checkLogin()">Login</button>
+    <div class="result" id="loginResult"></div>
+  </div>
+
+  <div class="admin-panel hidden" id="adminPanel">
+    <h2>Add New Order</h2>
+    <label for="orderId">Order ID:</label>
+    <input type="text" id="orderId" placeholder="e.g. RAW1234" />
+    <label for="trackingUrl">Tracking URL:</label>
+    <input type="text" id="trackingUrl" placeholder="Paste Shiprocket URL" />
+    <button onclick="addOrder()">Add Order</button>
+    <div class="result" id="adminResult"></div>
+  </div>
+
+  <script>
+    // Load orders from localStorage or initialize empty object
+    let orders = JSON.parse(localStorage.getItem('orders')) || {};
+
+    function saveOrders() {
+      localStorage.setItem('orders', JSON.stringify(orders));
+    }
+
+    function trackOrder() {
+      const id = document.getElementById('trackOrderId').value.trim().toUpperCase();
+      const result = document.getElementById('trackResult');
+      if (!id) {
+        result.textContent = 'Please enter an Order ID.';
+        return;
+      }
+      if (orders[id]) {
+        result.innerHTML = `Tracking: <a href="${orders[id]}" target="_blank" rel="noopener noreferrer">Click Here</a>`;
+      } else {
+        result.textContent = 'Order ID not found.';
+      }
+    }
+
+    function showLogin() {
+      document.getElementById('loginPanel').classList.remove('hidden');
+    }
+
+    function checkLogin() {
+      const email = document.getElementById('adminEmail').value.trim();
+      const pass = document.getElementById('adminPassword').value.trim();
+      const result = document.getElementById('loginResult');
+
+      if (email === 'debnathguddu2004@gmail.com' && pass === 'Maa@2004@08') {
+        result.textContent = 'Login successful';
+        document.getElementById('loginPanel').classList.add('hidden');
+        document.getElementById('adminPanel').classList.remove('hidden');
+      } else {
+        result.textContent = 'Incorrect credentials';
+      }
+    }
+
+    function addOrder() {
+      const id = document.getElementById('orderId').value.trim().toUpperCase();
+      const link = document.getElementById('trackingUrl').value.trim();
+      const result = document.getElementById('adminResult');
+
+      if (!id || !link) {
+        result.textContent = 'Please fill all fields.';
+        return;
+      }
+
+      orders[id] = link;
+      saveOrders();
+
+      result.textContent = `Order ${id} added successfully.`;
+      document.getElementById('orderId').value = '';
+      document.getElementById('trackingUrl').value = '';
+    }
+  </script>
+</body>
+</html>
